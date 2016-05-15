@@ -261,29 +261,42 @@ App.ServicesShowRoute = App.BaseRoute.extend({
   }
 });
 
-function distance(a, b) {
-    a = a.Coord;
-    b = b.Coord;
-    var sum = 0;
-    for (var i = 0; i < a.Vec.length; i++) {
-        var diff = a.Vec[i] - b.Vec[i];
-        sum += diff * diff;
-    }
-    var rtt = Math.sqrt(sum) + a.Height + b.Height;
-
-    var adjusted = rtt + a.Adjustment + b.Adjustment;
-    if (adjusted > 0.0) {
-        rtt = adjusted;
-    }
-
-    return Math.round(rtt * 100000.0) / 100.0;
+// TODO: not sure how to how do to this more Ember.js-y
+function tomographyMouseOver(el) {
+  var buf = el.getAttribute('data-node') + ' - ' + el.getAttribute('data-distance') + 'ms';
+  document.getElementById('tomography-node-info').innerHTML = buf;
 }
 
 App.NodesShowRoute = App.BaseRoute.extend({
   model: function(params) {
+
+    function distance(a, b) {
+      a = a.Coord;
+      b = b.Coord;
+      var sum = 0;
+      for (var i = 0; i < a.Vec.length; i++) {
+        var diff = a.Vec[i] - b.Vec[i];
+        sum += diff * diff;
+      }
+      var rtt = Math.sqrt(sum) + a.Height + b.Height;
+
+      var adjusted = rtt + a.Adjustment + b.Adjustment;
+      if (adjusted > 0.0) {
+        rtt = adjusted;
+      }
+
+      return Math.round(rtt * 100000.0) / 100.0;
+    }
+
+    function sorter(a, b) {
+      return a.distance - b.distance;
+    }
+
     var dc = this.modelFor('dc');
     var token = App.get('settings.token');
 
+    var min = 999999999;
+    var max = -999999999;
     var sum = 0;
     var distances = [];
     dc.coordinates.forEach(function (node) {
@@ -291,16 +304,20 @@ App.NodesShowRoute = App.BaseRoute.extend({
         dc.coordinates.forEach(function (other) {
           if (node.Node != other.Node) {
             var dist = distance(node, other);
-            distances.push(dist);
+            distances.push({ node: other.Node, distance: dist});
             sum += dist;
+            if (dist < min) {
+              min = dist;
+            }
+            if (dist > max) {
+              max = dist;
+            }
           }
         });
-        distances.sort();
+        distances.sort(sorter);
       }
     });
-    var min = Math.min.apply(null, distances);
     var avg = sum / distances.length;
-    var max = Math.max.apply(null, distances);
 
     // Return a promise hash of the node and nodes
     return Ember.RSVP.hash({

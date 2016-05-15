@@ -105,7 +105,12 @@ Ember.Handlebars.helper('tomographyGraph', function(tomography, size) {
   // up drastically.
 
   var n = tomography.n;
-  var max = Math.max.apply(null, tomography.distances);
+  var max = -999999999;
+  tomography.distances.forEach(function (d, i) {
+    if (d.distance > max) {
+      max = d.distance;
+    }
+  });
   var insetSize = size / 2 - 8;
   var buf = '' +
 '      <svg width="' + size + '" height="' + size + '">' +
@@ -118,8 +123,9 @@ Ember.Handlebars.helper('tomographyGraph', function(tomography, size) {
 '            <circle class="border" r="' + insetSize + '"/>' +
 '          </g>' +
 '          <g class="lines">';
-  tomography.distances.forEach(function (distance, i) {
-    buf += '            <line transform="rotate(' + (i * 360 / n) + ')" y2="' + (-insetSize * (distance / max)) + '"></line>';
+  tomography.distances.forEach(function (d, i) {
+    buf += '            <line transform="rotate(' + (i * 360 / n) + ')" y2="' + (-insetSize * (d.distance / max)) + '" ' +
+'                data-node="' + d.node + '" data-distance="' + d.distance + '" onmouseover="tomographyMouseOver(this);"></line>';
   });
   buf += '' +
 '          </g>' +
