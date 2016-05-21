@@ -129,11 +129,7 @@ App.IndexRoute = App.BaseRoute.extend({
               }
               peers.push({
                 datacenter: target.Datacenter,
-                min: distances[0],
-                median: {
-                  distance: medianDistance(distances),
-                },
-                max: distances[n1]
+                distances: distances,
               });
             }
           });
